@@ -18,6 +18,15 @@ const App = () => {
     blogService.getAll().then(blogs => setBlogs(blogs));
   }, []);
 
+  useEffect(() => {
+    const loggedUserJSON = window.localStorage.getItem("loggedBlogAppUser");
+    if (loggedUserJSON) {
+      const user = JSON.parse(loggedUserJSON);
+      setUser(user);
+      blogService.setToken(user.token);
+    }
+  }, []);
+
   const handleLogin = async event => {
     event.preventDefault();
 
@@ -26,6 +35,8 @@ const App = () => {
         username,
         password,
       });
+
+      window.localStorage.setItem("loggedBlogAppUser", JSON.stringify(user));
       blogService.setToken(user.token);
       setUser(user);
       setUsername("");
@@ -38,9 +49,29 @@ const App = () => {
     }
   };
 
+  const handleLogout = event => {
+    window.localStorage.removeItem("loggedBlogAppUser");
+  };
+
   const handleCreate = async event => {
     event.preventDefault();
-    console.log("create", title, author, url);
+
+    const newBlog = {
+      title: title,
+      author: author,
+      url: url,
+    };
+
+    blogService.create(newBlog).then(returnedName => {
+      setBlogs(blogs.concat(returnedName));
+      setTitle("");
+      setAuthor("");
+      setUrl("");
+      setErrorMessage(`Added ${title}`);
+      setTimeout(() => {
+        setErrorMessage(null);
+      }, 5000);
+    });
   };
 
   if (user === null) {
@@ -77,7 +108,9 @@ const App = () => {
       <Notification message={errorMessage} />
       <h2>blogs</h2>
       <p>{user.name} logged in</p>
-      <button>logout</button>
+      <button type="submit" onClick={handleLogout}>
+        logout
+      </button>
       <h2>create new</h2>
       <form onSubmit={handleCreate}>
         <div>
